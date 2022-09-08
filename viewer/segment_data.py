@@ -5,19 +5,14 @@ from numpy.lib.stride_tricks import as_strided
 
 def separate_data_chs(record,n_chs,target_ch_structure='v'):
     if target_ch_structure == 'v':
-        return np.hsplit(record,n_chs)
+        return np.array(np.hsplit(record,n_chs))
     elif target_ch_structure == 'h':
-        return np.hsplit(record,n_chs).T
+        return np.array(np.hsplit(record,n_chs).T)
     else:
         raise ValueError("This target channel structure doesn't exist. Please enter v for vertical or h for horizontal.")
 
 
-def make_views(
-    arr,
-    win_size,
-    step_size,
-    writeable=False,
-):
+def make_views(arr,win_size,step_size,writeable=False):
     """
   arr: any 2D array whose columns are distinct variables and
     rows are data records at some timestamp t

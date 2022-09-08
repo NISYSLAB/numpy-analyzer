@@ -290,7 +290,7 @@ def build_features_dataframe(dataset_records,features_names,f_low,f_high,fs,save
 
     data_features_df = pd.DataFrame(columns=features_names)
     clean_dataset = denoise_signals(dataset_records,'ibdct',f_low,f_high,fs)
-
+    #fix this code to be generic and at the same time include the labels
     for i,record in enumerate(clean_dataset):
         data = record[0]
         label = record[1]

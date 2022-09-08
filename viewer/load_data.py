@@ -62,7 +62,7 @@ def structure_record(record,ch_structure='v',target_ch_structure='v'):
             return record.T
 
 
-def load_record_txt(record_file,ch_structure='v',target_ch_structure='v'):
+def load_record_txt(record_file,ch_structure='v',target_ch_structure='v',label=False):
     '''
     read and convert a record from text file to a numpy array with the target channel format.
     Parameters
@@ -88,7 +88,7 @@ def load_record_txt(record_file,ch_structure='v',target_ch_structure='v'):
             
 
 
-def load_record_csv(record,delimiter=',',dtype=None,ch_structure='v',target_ch_structure='v'):
+def load_record_csv(record,delimiter=',',dtype=None,ch_structure='v',target_ch_structure='v',label=False):
     '''
     convert a record from csv file to a numpy array with the target channel format.
 
@@ -109,7 +109,7 @@ def load_record_csv(record,delimiter=',',dtype=None,ch_structure='v',target_ch_s
         record = np.genfromtxt(record, delimiter=delimiter)
     return structure_record(record,ch_structure=ch_structure,target_ch_structure=target_ch_structure)
 
-def load_record_np(record,ch_structure='v',target_ch_structure='v'):
+def load_record_np(record,ch_structure='v',target_ch_structure='v',label=False):
     '''
     reads numpy file and returns the record array in the target restructured format.
 
@@ -166,14 +166,12 @@ def load_dir(dir_path,ch_structure='v',target_ch_structure='v',delimiter=',',dty
     ------
     dataset: array containing all the records' arrays. 
     '''
-    dataset = np.array(len(os.listdir(dir_path)))
-    for path in os.listdir(dir_path):
-        print(path)
+    dataset = []
+    for i,path in enumerate(os.listdir(dir_path)):
         if os.path.isfile(os.path.join(dir_path, path)):
-            print(os.path.join(dir_path, path))
-            np.append(dataset,load_record(os.path.join(dir_path, path),ch_structure,target_ch_structure,dtype),axis=0)
+            dataset.append(load_record(os.path.join(dir_path, path),delimiter=delimiter,ch_structure=ch_structure,target_ch_structure=target_ch_structure,dtype=dtype))
 
-    return dataset
+    return np.array(dataset)
 
 
 

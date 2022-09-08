@@ -1,7 +1,10 @@
+import sys
+import os
 import numpy as np
 import pandas as pd
 from scipy.signal import resample
 from scipy import stats
+from scipy.signal import welch
 from scipy.stats import scoreatpercentile as q
 from collections import defaultdict
 
@@ -16,26 +19,52 @@ def resample_signal(signal,number_of_samples=None,upsample=1.0,downsample=1.0,wi
     new_length = number_of_samples
     if (upsample != 1.0) or (downsample != 1.0):
         new_length = resampled_signal_length(upsample,downsample,signal.shape[axis])
+        print(new_length)
     new_signal = resample(signal,new_length,window=window,axis=axis)
     return new_signal
 
+def get_Freq(x, fs, nfft):
 
-def describe(ch,name,cols_dict,id=None):
+    if ~np.isfinite(x).any():
+        print("There is non-numeric value in input to get_Freq()")
+        print(np.argwhere(~np.isfinite(x)))
+        sys.exit("Exit the program because the output will not be valid.")
+
+    nperseg = len(x)
+    if nfft < nperseg:
+        print(f'nfft is : {nfft}')
+        print(f'nperseg is : {nperseg}')
+        nfft = nperseg
+    freqs, Pxx_den = welch(x,
+                           fs,
+                           nperseg=len(x),
+                           noverlap=int(0.5 * nperseg),
+                           nfft=nfft,
+                           scaling="density",
+                           detrend=False,
+                           average="mean")
+    # Find closest indices of band in frequency vector
+    #idx_band = np.logical_and(freqs >= low_freq, freqs <= hi_freq)
+
+    return freqs, Pxx_den
+
+def describe(ch,name,cols_dict,fs=2,nfft=0,id=None):
+    Freq, PSD = get_Freq(ch, fs, nfft)
     cols_dict['name'].append(name)
     cols_dict['unit'].append(ch.dtype)
-    cols_dict['length'].append()
+    cols_dict['length'].append(ch.shape[0])
     cols_dict['min'].append(np.min(ch))
     cols_dict['max'].append(np.max(ch))
     cols_dict['mean'].append(np.mean(ch))
     cols_dict['Q1'].append(q(ch,25))
     cols_dict['median'].append(np.median(ch))
     cols_dict['Q3'].append(q(ch,75))
-    cols_dict['mode'].append(np.mode(ch))
+    cols_dict['mode'].append(stats.mode(ch,nan_policy='raise')[0][0])
     cols_dict['variance'].append(np.var(ch))
     cols_dict['skew'].append(stats.skew(ch))
     cols_dict['kurtosis'].append(stats.kurtosis(ch))
-    cols_dict['DF'].append()
-    cols_dict['DP'].append()
+    cols_dict['DF'].append(Freq[np.argmax(PSD)] * 60)
+    cols_dict['DP'].append(np.max(PSD))
     if id:
         cols_dict['id'].append(id)
 
