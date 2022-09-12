@@ -92,25 +92,40 @@ def create_filter(fs,f_low=None,f_high=None,order=2,method='iir',
 
     if method.lower() == 'iir':
         if output == 'ba':
+            if analog:
+                b,a = signal.iirfilter(order, Wn, rp=rp, rs=rs, btype=btype, analog=analog, 
+                                ftype=ftype, output=output)
+                filter = (b,a)
 
-            b,a = signal.iirfilter(order, Wn, rp=rp, rs=rs, btype=btype, analog=analog, 
-                                ftype=ftype, output=output, fs=fs)
-            filter = (b,a)
+            else:
+                b,a = signal.iirfilter(order, Wn, rp=rp, rs=rs, btype=btype, analog=analog, 
+                                    ftype=ftype, output=output, fs=fs)
+                filter = (b,a)
             w,h = get_freq_response(filter,output,analog=analog,type=method)
             
 
 
         elif output == 'zpk':
+            if analog:
+                z,p,k=signal.iirfilter(order, Wn, rp=rp, rs=rs, btype=btype, analog=analog, 
+                                ftype=ftype, output=output)
+                filter = (z,p,k)
 
-            z,p,k = signal.iirfilter(order, Wn, rp=rp, rs=rs, btype=btype, analog=analog, 
-                                ftype=ftype, output=output, fs=fs)
-            filter = (z,p,k)
+            else:
+                    
+                z,p,k = signal.iirfilter(order, Wn, rp=rp, rs=rs, btype=btype, analog=analog, 
+                                    ftype=ftype, output=output, fs=fs)
+                filter = (z,p,k)
             w,h = get_freq_response(filter,output,analog=analog,type=method)
 
         elif output == 'sos':
+            if analog:
+                filter = signal.iirfilter(order, Wn, rp=rp, rs=rs, btype=btype, analog=analog, 
+                                ftype=ftype, output=output)
 
-            filter = signal.iirfilter(order, Wn, rp=rp, rs=rs, btype=btype, analog=analog, 
-                                ftype=ftype, output=output, fs=fs)
+            else:
+                filter = signal.iirfilter(order, Wn, rp=rp, rs=rs, btype=btype, analog=analog, 
+                                    ftype=ftype, output=output, fs=fs)
             w,h = get_freq_response(filter,output,analog=analog,type=method)
 
         else:

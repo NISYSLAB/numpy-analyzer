@@ -6,6 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from viewer.segment_data import separate_data_chs
+from viewer.preprocessing import get_Freq
 from ssqueezepy import ssq_cwt
 
 def plot_random_samples(dataset,n_samples=5,fs=2,n_chs=3,start=None,end=None,type='signal',colormap='Viridis',
@@ -36,21 +37,22 @@ def plot_random_samples(dataset,n_samples=5,fs=2,n_chs=3,start=None,end=None,typ
 
 
 
-def plot_signal(record,n_chs):
+def plot_signal(record,n_chs=3,fs=2):
     chs = separate_data_chs(record,n_chs)
     
     fig = make_subplots(rows=n_chs, cols=1)
 
     for i,ch in enumerate(chs):
+        time = ch.shape[0] / float(fs)
         fig.append_trace(go.Scatter(
-        x=np.arange(0,ch.shape[0]),
+        x=np.linspace(0, time, ch.shape[0]),
         y=ch.flatten(),
         mode='lines',
         name = f'ch{(i+1)}'
         ), row=(i+1), col=1)
 
 
-    fig.update_xaxes(title_text="Samples")
+    fig.update_xaxes(title_text="Time [sec]")
     fig.update_yaxes(title_text="Amplitude")
     fig.update_layout(title_text="Signal Channels",margin=dict(r=20, t=40, b=60, l=20),height=700)
     fig.show()
@@ -77,11 +79,31 @@ def plot_spectrogram(record,n_chs,fs,colormap='Viridis'):
             colorscale=colormap,
 
         ),row=(i+1),col=1)
-        fig.update_xaxes(title_text="Time segments")
-        fig.update_yaxes(title_text="Frequency")
+        fig.update_xaxes(title_text="Time [sec]")
+        fig.update_yaxes(title_text="Frequency [Hz]")
         fig.update_layout(title='Spectrogram of signal',margin=dict(r=20, t=40, b=60, l=20),height=700)
         fig.show()
 
+def plot_psd(record,n_chs=3,fs=2,f_low=None,f_high=None,nfft=None):
+    chs = separate_data_chs(record,n_chs)
+    
+    fig = make_subplots(rows=n_chs, cols=1)
+
+    for i,ch in enumerate(chs):
+        Freq, PSD = get_Freq(ch.flatten(), fs=fs,low_freq=f_low,hi_freq=f_high, nfft=nfft)
+        fig.append_trace(go.Scatter(
+        x=Freq,
+        y=PSD,
+        mode='lines',
+        name = f'PSD of ch{(i+1)}'
+        ), row=(i+1), col=1)
+
+
+    fig.update_xaxes(title_text="Frequency [Hz]")
+    fig.update_yaxes(type="log")
+    fig.update_yaxes(title_text="PSD")
+    fig.update_layout(title_text="Signal Channels' PSD",margin=dict(r=20, t=40, b=60, l=20),height=700)
+    fig.show()
 
 def plot_sscwt_cwt(signal,n_chs=3,fs=2,colormap = 'Viridis',type='sscwt/cwt'):
     record_chs = separate_data_chs(signal,n_chs)
@@ -100,14 +122,14 @@ def plot_sscwt_cwt(signal,n_chs=3,fs=2,colormap = 'Viridis',type='sscwt/cwt'):
             type = 'heatmap',
             colorscale='Viridis',
             ),row=1,col=1)
-            fig.update_xaxes(title_text="Samples", row=1, col=1)
-            fig.update_yaxes(title_text="Frequency", row=1, col=1)
+            fig.update_xaxes(title_text="Time [sec]", row=1, col=1)
+            fig.update_yaxes(title_text="Frequency [Hz]", row=1, col=1)
 
             fig.add_trace(go.Surface(z=np.abs(Tx),contours_z=dict(show=True, usecolormap=True,
                                         highlightcolor="limegreen", project_z=True)),row=1,col=2)
-            fig.update_xaxes(title_text="Samples", row=1, col=2)
-            fig.update_yaxes(title_text="Frequency", row=1, col=2)
-            fig.update_layout(title_text=f"SSCWT Representation of ch{i}")
+            fig.update_xaxes(title_text="Time [sec]", row=1, col=2)
+            fig.update_yaxes(title_text="Frequency [Hz]", row=1, col=2)
+            fig.update_layout(title_text=f"SSCWT Representation of ch{i+1}")
 
             fig.show()
         elif type=='cwt':
@@ -121,14 +143,14 @@ def plot_sscwt_cwt(signal,n_chs=3,fs=2,colormap = 'Viridis',type='sscwt/cwt'):
             type = 'heatmap',
             colorscale='Viridis',
             ),row=1,col=1)
-            fig.update_xaxes(title_text="Samples", row=1, col=1)
-            fig.update_yaxes(title_text="Frequency", row=1, col=1)
+            fig.update_xaxes(title_text="Time [sec]", row=1, col=1)
+            fig.update_yaxes(title_text="Frequency [Hz]", row=1, col=1)
 
             fig.add_trace(go.Surface(z=np.abs(Wx),contours_z=dict(show=True, usecolormap=True,
                                         highlightcolor="limegreen", project_z=True)),row=1,col=2)
-            fig.update_xaxes(title_text="Samples", row=1, col=2)
-            fig.update_yaxes(title_text="Frequency", row=1, col=2)
-            fig.update_layout(title_text=f"CWT Representation of ch{i}")
+            fig.update_xaxes(title_text="Time [sec]", row=1, col=2)
+            fig.update_yaxes(title_text="Frequency [Hz]", row=1, col=2)
+            fig.update_layout(title_text=f"CWT Representation of ch{i+1}")
 
             fig.show()
 
@@ -143,14 +165,14 @@ def plot_sscwt_cwt(signal,n_chs=3,fs=2,colormap = 'Viridis',type='sscwt/cwt'):
             type = 'heatmap',
             colorscale='Viridis',
             ),row=1,col=1)
-            fig.update_xaxes(title_text="Samples", row=1, col=1)
-            fig.update_yaxes(title_text="Frequency", row=1, col=1)
+            fig.update_xaxes(title_text="Time [sec]", row=1, col=1)
+            fig.update_yaxes(title_text="Frequency [Hz]", row=1, col=1)
 
             fig.add_trace(go.Surface(z=np.abs(Wx),contours_z=dict(show=True, usecolormap=True,
                                         highlightcolor="limegreen", project_z=True)),row=1,col=2)
-            fig.update_xaxes(title_text="Samples", row=1, col=2)
-            fig.update_yaxes(title_text="Frequency", row=1, col=2)
-            fig.update_layout(title_text=f"CWT Representation of ch{i}")
+            fig.update_xaxes(title_text="Time [sec]", row=1, col=2)
+            fig.update_yaxes(title_text="Frequency [Hz]", row=1, col=2)
+            fig.update_layout(title_text=f"CWT Representation of ch{i+1}")
 
             fig.show()
 
@@ -164,14 +186,14 @@ def plot_sscwt_cwt(signal,n_chs=3,fs=2,colormap = 'Viridis',type='sscwt/cwt'):
             type = 'heatmap',
             colorscale='Viridis',
             ),row=1,col=1)
-            fig.update_xaxes(title_text="Samples", row=1, col=1)
-            fig.update_yaxes(title_text="Frequency", row=1, col=1)
+            fig.update_xaxes(title_text="Time [sec]", row=1, col=1)
+            fig.update_yaxes(title_text="Frequency [Hz]", row=1, col=1)
 
             fig.add_trace(go.Surface(z=np.abs(Tx),contours_z=dict(show=True, usecolormap=True,
                                         highlightcolor="limegreen", project_z=True)),row=1,col=2)
-            fig.update_xaxes(title_text="Samples", row=1, col=2)
-            fig.update_yaxes(title_text="Frequency", row=1, col=2)
-            fig.update_layout(title_text=f"SSCWT Representation of ch{i}")
+            fig.update_xaxes(title_text="Time [sec]", row=1, col=2)
+            fig.update_yaxes(title_text="Frequency [Hz]", row=1, col=2)
+            fig.update_layout(title_text=f"SSCWT Representation of ch{i+1}")
 
             fig.show()
 
@@ -267,10 +289,12 @@ def plot_step_response(b,a):
                 
     figure.show()
 
+
+    
 def plot_filter_prop(b,a,w,h,fs):
     plot_mag_response(w,h,fs)
     plot_phase_response(w,h,fs)
     plot_impulse_response(b,a)
     plot_step_response(b,a)
 
-    
+
