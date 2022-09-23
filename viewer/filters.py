@@ -63,7 +63,7 @@ def get_freq_response(filter,output_type='ba', type='iir',analog=False):
 
 
 def create_filter(fs,f_low=None,f_high=None,order=2,method='iir', 
-                    rp=None, rs=None, btype='band', analog=False, ftype='butter', 
+                    rp=None, rs=None, btype='bandpass', analog=False, ftype='butter', 
                     window='hamming', scale=True,output='ba'):
     if f_low <= 0 or f_high<=0:
         raise ValueError('Frequency must be a positive number.')

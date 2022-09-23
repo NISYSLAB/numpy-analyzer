@@ -67,7 +67,7 @@ def describe(ch,name,cols_dict,fs=2,f_low=None,f_high=None,nfft=None,id=None):
     cols_dict['variance'].append(np.var(ch))
     cols_dict['skew'].append(stats.skew(ch))
     cols_dict['kurtosis'].append(stats.kurtosis(ch))
-    cols_dict['DF'].append(Freq[np.argmax(PSD)] * 60)
+    cols_dict['DF'].append(Freq[np.argmax(PSD)])
     cols_dict['DP'].append(np.max(PSD))
     if id:
         cols_dict['id'].append(id)
