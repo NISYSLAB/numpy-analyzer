@@ -21,6 +21,7 @@ For full explaination of the viewer modules and functions refer to the report [h
 
 
 ### GUI 
+To run the GUI download the project repo, navigate to the package-functions folder, and then run the main file.
 ```
 python main.py
 ```
