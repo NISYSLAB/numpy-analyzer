@@ -1,5 +1,5 @@
-![Google Summer of Code Logo](data/GSoC.png)
-![Emory University - BMI Department Logo](data/emory-bmi.jpg)
+![Google Summer of Code Logo](data/GSoC.png =100x100)
+![Emory University - BMI Department Logo](data/emory-bmi.jpg =100x100)
 
 # Python based tool for viewing and basic analysis of files with Numpy format
 
@@ -45,7 +45,7 @@ The viewer is a python based tool for efficient analysis and visualization of el
 To see package source code and download GUI refer to the package [ReadME](package-functions/ReadME.md)
 
 
-For detailed explaination of the viewer's structure and functions please refer to the the full report written [here](models/Viewer-Report.pdf)
+For detailed explaination of the viewer's structure and functions please refer to the the full report written [here](package-functions/Viewer-Report.pdf)
 
 
 
