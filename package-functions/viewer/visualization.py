@@ -3,9 +3,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import signal
 from plotly.subplots import make_subplots
+import plotly.express as px
+import plotly.graph_objects as go
 from viewer.segment_data import separate_data_chs
 from viewer.preprocessing import get_Freq
 from ssqueezepy import ssq_cwt
+from ssqueezepy.experimental import scale_to_freq
 
 def plot_random_samples(dataset,n_samples=5,fs=2,n_chs=3,start=None,end=None,type='signal',colormap='Viridis',
                         seed=50):
@@ -89,19 +92,17 @@ def plot_signals(dataset,start,end,indices=None,n_chs=3):
 
 def plot_spectrogram(record,n_chs,fs,colormap='Viridis',gui=False):
     record_chs = separate_data_chs(record,n_chs)
-    fig = make_subplots(rows=1, cols=n_chs)
+    fig = make_subplots(rows=1, cols=n_chs,x_title= "Time [sec]",y_title="Frequency [Hz]")
     for i,ch in enumerate(record_chs): 
         f, t, Sxx = signal.spectrogram(ch.flatten(), fs=fs)
         fig.append_trace(go.Heatmap(
             x=t,
             y = f,
             z=np.array(Sxx),
-            colorscale=colormap,
+            coloraxis = "coloraxis",
 
         ),row=1,col=(i+1))
-        fig.update_xaxes(title_text="Time [sec]")
-        fig.update_yaxes(title_text="Frequency [Hz]")
-        fig.update_layout(title='Spectrogram of signal')
+        fig.update_layout(title='Spectrogram of signal',coloraxis = {'colorscale':colormap})
     if gui:
         return fig
     fig.show()
@@ -111,7 +112,8 @@ def plot_spectrogram(record,n_chs,fs,colormap='Viridis',gui=False):
 def plot_psd(record,n_chs=3,fs=2,f_low=None,f_high=None,nfft=None,gui=False):
     chs = separate_data_chs(record,n_chs)
     
-    fig = make_subplots(rows=1, cols=n_chs)
+    fig = make_subplots(rows=1, cols=n_chs, x_title="Frequency [Hz]",
+    y_title="PSD [V**2/Hz]")
 
     for i,ch in enumerate(chs):
         Freq, PSD = get_Freq(ch.flatten(), fs=fs,low_freq=f_low,hi_freq=f_high, nfft=nfft)
@@ -122,11 +124,9 @@ def plot_psd(record,n_chs=3,fs=2,f_low=None,f_high=None,nfft=None,gui=False):
         name = f'PSD of ch{(i+1)}'
         ), row=1, col=(i+1))
 
-
-    fig.update_xaxes(title_text="Frequency [Hz]")
     fig.update_yaxes(type="log")
-    fig.update_yaxes(title_text="PSD [V**2/Hz]")
     fig.update_layout(title_text="Signal Channels' PSD")
+    
     if gui:
         return fig
     fig.show()
@@ -137,7 +137,9 @@ def plot_sscwt_cwt(signal,n_chs=3,fs=2,colormap = 'Viridis',type='sscwt/cwt',plo
     if plot_3d:
 
         for i,ch in enumerate(record_chs):
-            Tx, Wx, *_ = ssq_cwt(ch.reshape(ch.shape[0],))
+            Tx, Wx,ssq_freqs,scales, *_ = ssq_cwt(ch.reshape(ch.shape[0],),fs=fs)
+            freqs = scale_to_freq(scales,'gmw',N=ch.shape[0],fs=2)
+            time = ch.shape[0] / float(fs)
 
             if type =='sscwt':
                 fig = make_subplots(rows=1, cols=2,
@@ -145,15 +147,17 @@ def plot_sscwt_cwt(signal,n_chs=3,fs=2,colormap = 'Viridis',type='sscwt/cwt',plo
                                 specs=[[{"type": "heatmap"},{"type": "surface"}]],
                                 )
                 fig.add_trace(go.Heatmap(
+                x= np.linspace(0, time, ch.shape[0]),
+                y = ssq_freqs,
                 z=np.abs(Tx),
-                texttemplate= "%{z}",
                 type = 'heatmap',
                 colorscale='Viridis',
                 ),row=1,col=1)
                 fig.update_xaxes(title_text="Time [sec]", col=1, row=1)
                 fig.update_yaxes(title_text="Frequency [Hz]", col=1, row=1)
 
-                fig.add_trace(go.Surface(z=np.abs(Tx),contours_z=dict(show=True, usecolormap=True,
+                fig.add_trace(go.Surface(x= np.linspace(0, time, ch.shape[0]),
+                y = ssq_freqs,z=np.abs(Tx),contours_z=dict(show=True, usecolormap=True,
                                             highlightcolor="limegreen", project_z=True)),row=1,col=2)
                 fig.update_scenes(xaxis_title_text='Time [sec]',  
                     yaxis_title_text='Frequency [Hz]',  
@@ -166,15 +170,17 @@ def plot_sscwt_cwt(signal,n_chs=3,fs=2,colormap = 'Viridis',type='sscwt/cwt',plo
                                 specs=[[{"type": "heatmap"},{"type": "surface"}]],
                                 )
                 fig.add_trace(go.Heatmap(
+                x= np.linspace(0, time, ch.shape[0]),
+                y = freqs,
                 z=np.abs(Wx),
-                texttemplate= "%{z}",
                 type = 'heatmap',
                 colorscale='Viridis',
                 ),row=1,col=1)
                 fig.update_xaxes(title_text="Time [sec]", col=1, row=1)
                 fig.update_yaxes(title_text="Frequency [Hz]", col=1, row=1)
 
-                fig.add_trace(go.Surface(z=np.abs(Wx),contours_z=dict(show=True, usecolormap=True,
+                fig.add_trace(go.Surface(x= np.linspace(0, time, ch.shape[0]),
+                y = freqs,z=np.abs(Wx),contours_z=dict(show=True, usecolormap=True,
                                             highlightcolor="limegreen", project_z=True)),row=1,col=2)
                 fig.update_xaxes(title_text="Time [sec]", row=1, col=2)
                 fig.update_yaxes(title_text="Frequency [Hz]", row=1, col=2)
@@ -190,15 +196,17 @@ def plot_sscwt_cwt(signal,n_chs=3,fs=2,colormap = 'Viridis',type='sscwt/cwt',plo
                                 specs=[[{"type": "heatmap"},{"type": "surface"}]],
                                 )
                 fig.add_trace(go.Heatmap(
+                x= np.linspace(0, time, ch.shape[0]),
+                y = freqs,
                 z=np.abs(Wx),
-                texttemplate= "%{z}",
                 type = 'heatmap',
                 colorscale='Viridis',
                 ),row=1,col=1)
                 fig.update_xaxes(title_text="Time [sec]", row=1, col=1)
                 fig.update_yaxes(title_text="Frequency [Hz]", row=1, col=1)
 
-                fig.add_trace(go.Surface(z=np.abs(Wx),contours_z=dict(show=True, usecolormap=True,
+                fig.add_trace(go.Surface(x= np.linspace(0, time, ch.shape[0]),
+                y = freqs,z=np.abs(Wx),contours_z=dict(show=True, usecolormap=True,
                                             highlightcolor="limegreen", project_z=True)),row=1,col=2)
                 fig.update_xaxes(title_text="Time [sec]", row=1, col=2)
                 fig.update_yaxes(title_text="Frequency [Hz]", row=1, col=2)
@@ -210,15 +218,17 @@ def plot_sscwt_cwt(signal,n_chs=3,fs=2,colormap = 'Viridis',type='sscwt/cwt',plo
                                 specs=[[{"type": "heatmap"},{"type": "surface"}]],
                                 )
                 fig.add_trace(go.Heatmap(
+                x= np.linspace(0, time, ch.shape[0]),
+                y = ssq_freqs,
                 z=np.abs(Tx),
-                texttemplate= "%{z}",
                 type = 'heatmap',
                 colorscale='Viridis',
                 ),row=1,col=1)
                 fig.update_xaxes(title_text="Time [sec]", row=1, col=1)
                 fig.update_yaxes(title_text="Frequency [Hz]", row=1, col=1)
 
-                fig.add_trace(go.Surface(z=np.abs(Tx),contours_z=dict(show=True, usecolormap=True,
+                fig.add_trace(go.Surface(x= np.linspace(0, time, ch.shape[0]),
+                y = ssq_freqs,z=np.abs(Tx),contours_z=dict(show=True, usecolormap=True,
                                             highlightcolor="limegreen", project_z=True)),row=1,col=2)
                 fig.update_xaxes(title_text="Time [sec]", row=1, col=2)
                 fig.update_yaxes(title_text="Frequency [Hz]", row=1, col=2)
@@ -230,51 +240,67 @@ def plot_sscwt_cwt(signal,n_chs=3,fs=2,colormap = 'Viridis',type='sscwt/cwt',plo
                                 subplot_titles=['2D representation of CWT', '2D representation of SSCWT'])
         else:
             fig = make_subplots(rows=1, cols=n_chs,)
+            fig.update_layout(title_text=f"2D {type.upper()} Representation of Signal")
         
         for i,ch in enumerate(record_chs):
-            Tx, Wx, *_ = ssq_cwt(ch.reshape(ch.shape[0],))
-
+            Tx, Wx,ssq_freqs,scales, *_ = ssq_cwt(ch.reshape(ch.shape[0],),fs=fs)
+            freqs = scale_to_freq(scales,'gmw',N=ch.shape[0],fs=2)
+            time = ch.shape[0] / float(fs)
+            print(f'max freq = {max(ssq_freqs)}')
+            print(f'max scale = {max(scales)}')
+            print(f'max Tx = {np.amax(np.abs(Tx))}')
+            print(f'max Wx = {np.amax(np.abs(Wx))}')
+            print('******************')
             if type =='sscwt':
                 fig.add_trace(go.Heatmap(
+                x= np.linspace(0, time, ch.shape[0]),
+                y = ssq_freqs,
                 z=np.abs(Tx),
-                texttemplate= "%{z}",
                 type = 'heatmap',
-                colorscale='Viridis',
+                coloraxis = "coloraxis",
                 ),row=1,col=(i+1))
                 fig.update_xaxes(title_text="Time [sec]", col=(i+1), row=1)
-                fig.update_yaxes(title_text="Frequency [Hz]", col=(i+1), row=1)
-                fig.update_layout(title_text=f"SSCWT Representation of ch{i+1}")
+                fig.update_yaxes(title_text="Frequency [Hz]",autorange="reversed", col=(i+1), row=1)
+
+                
 
             elif type=='cwt':
                 fig.add_trace(go.Heatmap(
+                x= np.linspace(0, time, ch.shape[0]),
+                y = freqs,
                 z=np.abs(Wx),
-                texttemplate= "%{z}",
                 type = 'heatmap',
-                colorscale='Viridis',
+                coloraxis = "coloraxis",
                 ),row=1,col=(i+1))
                 fig.update_xaxes(title_text="Time [sec]", col=(i+1), row=1)
-                fig.update_yaxes(title_text="Frequency [Hz]", col=(i+1), row=1)
-                fig.update_layout(title_text=f"CWT Representation of ch{i+1}")
+                fig.update_yaxes(title_text="Frequency [Hz]",autorange="reversed", col=(i+1), row=1)
+
+                
 
 
             elif type=='sscwt/cwt':
                 fig.add_trace(go.Heatmap(
+                x= np.linspace(0, time, ch.shape[0]),
+                y = freqs,
                 z=np.abs(Wx),
-                texttemplate= "%{z}",
                 type = 'heatmap',
-                colorscale='Viridis',
+                coloraxis = "coloraxis",
                 ),row=(i+1),col=1)
                 fig.update_xaxes(title_text="Time [sec]", row=(i+1), col=1)
-                fig.update_yaxes(title_text="Frequency [Hz]", row=(i+1), col=1)
+                fig.update_yaxes(title_text="Frequency [Hz]",autorange="reversed", row=(i+1), col=1)
+
 
                 fig.add_trace(go.Heatmap(
+                x= np.linspace(0, time, ch.shape[0]),
+                y = ssq_freqs,
                 z=np.abs(Tx),
-                texttemplate= "%{z}",
                 type = 'heatmap',
                 colorscale='Viridis',
                 ),row=(i+1),col=2)
                 fig.update_xaxes(title_text="Time [sec]", row=(i+1), col=2)
-                fig.update_yaxes(title_text="Frequency [Hz]", row=(i+1), col=2)
+                fig.update_yaxes(title_text="Frequency [Hz]",autorange="reversed", row=(i+1), col=2)
+
+        fig.update_layout(coloraxis = {'colorscale':colormap})
 
         
         if gui:
@@ -309,7 +335,8 @@ def plot_mag_response(w,h,fs,gui=False):
                 name='lines'))
     figure.update_layout(title='Magnitude Response',
                 xaxis_title='Frequency [Hz]',
-                yaxis_title='Magnitude [dB]')
+                yaxis_title='Magnitude [dB]',
+                font = dict(size=10))
     if gui:
         return figure
     figure.show()
@@ -324,7 +351,8 @@ def plot_phase_response(w,h,fs,gui=False):
                 name='lines'))
     figure.update_layout(title='Phase Response',
                 xaxis_title='Frequency [Hz]',
-                yaxis_title='Phase [degree]')
+                yaxis_title='Phase [degree]',
+                font = dict(size=10))
     if gui:
         return figure
     figure.show()
@@ -352,7 +380,8 @@ def plot_impulse_response(b=None,a=None,sos=None,gui=False):
                     'line': {
                             
                             'width': 2
-                        }})])
+                        }})],
+                        font = dict(size=10))
 
     if gui:
         return figure
@@ -384,7 +413,8 @@ def plot_step_response(b=None,a=None,sos=None,gui=False):
                     'line': {
                             
                             'width': 2
-                        }})])
+                        }})],
+                        font = dict(size=10))
     if gui:
         return figure
     figure.show()

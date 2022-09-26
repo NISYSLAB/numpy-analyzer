@@ -8,6 +8,8 @@ from PyQt5 import QtCore, QtWidgets, QtWebEngineWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import * 
 from PyQt5.QtCore import * 
+import plotly.express as px
+import plotly.graph_objects as go
 from viewer_GUI import Ui_MainWindow
 import viewer.visualization as viz
 import viewer.load_data as load_data
@@ -156,6 +158,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.plot_cwt()
         elif self.sscwt_flag:
             self.plot_sscwt()
+    
 
     def set_input_sig_freq(self):
         time.sleep(1)
@@ -184,6 +187,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.cwt_flag = 0
         self.sscwt_flag=0
 
+
     def plot_cwt(self):
         if self.ui.ApplyFilterOriginalSignal.isChecked():
             fig = viz.plot_sscwt_cwt(self.filtered_original_signal,n_chs=self.record_chs,fs=self.in_sig_fs,
@@ -191,7 +195,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         else:
              fig = viz.plot_sscwt_cwt(self.record,n_chs=self.record_chs,fs=self.in_sig_fs,
         colormap = 'Viridis',type='cwt',plot_3d=False,gui=True)
-        self.signal_prop_plot.setHtml(fig.to_html(include_plotlyjs='cdn'))
+
+        fig_html = fig.to_html(include_plotlyjs='cdn')
+        self.signal_prop_plot.setHtml(fig_html)
+        self.signal_prop_plot.show()
+        fig.show()
         self.psd_flag = 0
         self.spectro_flag=0
         self.cwt_flag = 1
@@ -204,7 +212,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         else:
             fig = viz.plot_sscwt_cwt(self.record,n_chs=self.record_chs,fs=self.in_sig_fs,
                                     colormap = 'Viridis',type='sscwt',plot_3d=False,gui=True)
-        self.signal_prop_plot.setHtml(fig.to_html(include_plotlyjs='cdn'))
+        fig_html = fig.to_html(include_plotlyjs='cdn')
+        self.signal_prop_plot.setHtml(fig_html)
+        self.signal_prop_plot.show()
+        fig.show()
         self.psd_flag = 0
         self.spectro_flag=0
         self.cwt_flag = 0
@@ -335,8 +346,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             fig = viz.plot_signal(self.filtered_original_signal,n_chs=self.record_chs,fs=self.in_sig_fs,gui=True)
         else:
             fig = viz.plot_signal(self.record,n_chs=self.record_chs,fs=self.in_sig_fs,gui=True)
-            self.signal_plot.setHtml(fig.to_html(include_plotlyjs='cdn'))
-            self.replot_current_prop()
+        self.signal_plot.setHtml(fig.to_html(include_plotlyjs='cdn'))
+        self.replot_current_prop()
         
 
 
