@@ -1,5 +1,5 @@
-![Google Summer of Code Logo](data/GSoC.png =100x100)
-![Emory University - BMI Department Logo](data/emory-bmi.jpg =100x100)
+![Google Summer of Code Logo](data/GSoC.png)
+![Emory University - BMI Department Logo](data/emory-bmi.jpg)
 
 # Python based tool for viewing and basic analysis of files with Numpy format
 
